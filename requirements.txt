@@ -11,3 +11,5 @@ pip install tensorflow
 pip install PIL 
 pip install matplotlib 
 pip install pickle
+
+download and install Splitcam
