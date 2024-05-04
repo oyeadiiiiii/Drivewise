@@ -1,0 +1,13 @@
+pip install opencv-python 
+pip install numpy 
+pip install Utils 
+pip install  mediapipe
+pip install face_geometry
+pip install  os
+pip install sklearn 
+pip install seaborne 
+pip install keras 
+pip install tensorflow 
+pip install PIL 
+pip install matplotlib 
+pip install pickle
