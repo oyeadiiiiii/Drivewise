@@ -1,6 +1,5 @@
 import threading
 import time
-
 from flask import Flask, Response, render_template, jsonify, request
 import cv2
 import numpy as np
@@ -117,7 +116,7 @@ def register_driver():
         
         # Your FaceDetection code here...
         cap = cv2.VideoCapture(0)
-        classifier = cv2.CascadeClassifier(r'C:\DriveWise\Face-Recognition\haarcascade_frontalface_default.xml')
+        classifier = cv2.CascadeClassifier(r'C:\DriveWise\haarcascade_frontalface_default.xml')
         
         count = 50
         face_list = []
