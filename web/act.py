@@ -12,7 +12,7 @@ from Attention_Scorer_Module import AttentionScorer
 def main():
     parser = argparse.ArgumentParser(description='Driver State Detection')
 
-    parser.add_argument('-c', '--camera', type=int, default=0, metavar='', help='Camera number, default is 0 (webcam)')
+    parser.add_argument('-c', '--camera', type=int, default=1, metavar='', help='Camera number, default is 0 (webcam)')
     parser.add_argument('--show_fps', action='store_true', help='Show the actual FPS of the capture stream, default is true')
     parser.add_argument('--show_proc_time', action='store_true', help='Show the processing time for a single frame, default is true')
     parser.add_argument('--show_eye_proc', action='store_true', help='Show the eyes processing, default is false')

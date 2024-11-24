@@ -1,82 +1,16 @@
-import threading
-import time
-from flask import Flask, Response, render_template, jsonify, request
 import cv2
 import numpy as np
+from flask import Flask, Response, render_template, jsonify, request
 from os import path
-from sklearn.neighbors import KNeighborsClassifier
-from act import main
+import threading
+from act import main  # Assuming this handles video feed and other actions
+from FaceRecog import facerecog  # Assuming this is your face recognition function
+
 
 app = Flask(__name__)
 
-# Load facial data if available
-data_file = "faces.npy"
-if path.exists(data_file):
-    data = np.load(data_file)
-    X = data[:, 1:].astype(int)
-    y = data[:, 0]
-else:
-    X, y = np.array([]), np.array([])
-
-# Initialize KNN model
-model = KNeighborsClassifier(n_neighbors=4)
-if len(X) > 0:
-    model.fit(X, y)
-
-# Global variables
 prev_name = ""
-update_interval = 1  # in seconds
-
-def facerecog(frame, model):
-    if model is None:
-        return None
-
-    classifier = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_frontalface_default.xml")
-
-    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    faces = classifier.detectMultiScale(gray)
-
-    if len(faces) > 0:
-        (x, y, w, h) = faces[0]
-        face_img = cv2.resize(gray[y:y+h, x:x+w], (100, 100)).flatten()
-        predicted_name = model.predict([face_img])[0]
-        return str(predicted_name)
-    else:
-        return None
-
-def update_driver_name():
-    global prev_name
-    while True:
-        try:
-            # Load facial data
-            data = np.load(data_file)
-            X = data[:, 1:].astype(int)
-            y = data[:, 0]
-            
-            # Check if data is available for training
-            if len(X) > 0:
-                # Initialize KNN model
-                model = KNeighborsClassifier(n_neighbors=4)
-                # Fit the model with data
-                model.fit(X, y)
-
-                cap = cv2.VideoCapture(0)
-                ret, frame = cap.read()
-                if ret:
-                    name = facerecog(frame, model)
-                    cap.release()
-                    
-                    # Update name only if it differs from the previous one
-                    if name != prev_name:
-                        prev_name = name
-            time.sleep(update_interval)  # Sleep for update_interval seconds
-        except Exception as e:
-            print(f"Error updating driver's name: {e}")
-
-# Start the thread for updating the driver's name
-update_thread = threading.Thread(target=update_driver_name)
-update_thread.daemon = True
-update_thread.start()
+current_name = None  # Global variable to store current recognized driver name
 
 def gen_frames_act():
     for frame, _ in main():
@@ -101,12 +35,16 @@ def video_feed_act():
 
 @app.route('/get_driver_name')
 def get_driver_name():
-    global prev_name
+    global current_name
     try:
-        return jsonify(driverName=prev_name)
+        # Return the current recognized name or its state
+        return jsonify(driverName=current_name)
     except Exception as e:
         print(f"Error in get_driver_name: {e}")
-        return jsonify(driverName=None)
+        return jsonify(error=str(e)), 500
+
+
+
 
 @app.route('/register_driver', methods=['POST'])
 def register_driver():
@@ -115,8 +53,8 @@ def register_driver():
         name = data.get('name')
         
         # Your FaceDetection code here...
-        cap = cv2.VideoCapture(0)
-        classifier = cv2.CascadeClassifier(r'C:\DriveWise\haarcascade_frontalface_default.xml')
+        cap = cv2.VideoCapture(1)
+        classifier = cv2.CascadeClassifier(r"web\haarcascade_frontalface_default.xml")
         
         count = 50
         face_list = []
@@ -177,5 +115,26 @@ def state_feed():
 
     return Response(generate(), mimetype='text/event-stream')
 
+def recognize_driver():
+    global current_name
+    while True:
+        try:
+            name = facerecog()  # Get the recognized name from facerecog()
+            if name != current_name:
+                current_name = name  # Update the global variable only when it changes
+                print(f"Updated current_name to: {current_name}")  # Debugging line
+        except Exception as e:
+            print(f"Error in recognize_driver: {e}")
+
+
+
+
 if __name__ == '__main__':
+    # Run facerecog and main functions in separate threads
+    t1 = threading.Thread(target=main)  # Main video feed handling
+    t2 = threading.Thread(target=recognize_driver)  # Face recognition handling
+    
+    t1.start()
+    t2.start()
+
     app.run(debug=True)
